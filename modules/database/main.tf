@@ -19,7 +19,7 @@ resource "azurerm_mssql_server" "sqlserver" {
   location                     = azurerm_resource_group.db_rg.location
   version                      = var.sqlversion
   administrator_login          = var.sql_user_name
-  administrator_login_password = azurerm_key_vault_secret.sql_server_password.value #var.sql_password
+  administrator_login_password = azurerm_key_vault_secret.sql_server_password.value
 }
 
 resource "azurerm_mssql_database" "database" {
@@ -29,25 +29,24 @@ resource "azurerm_mssql_database" "database" {
   license_type   = var.license_type
   read_scale     = var.read_scale
   zone_redundant = var.zone_redundant
-
-  tags = local.database_tags
+  tags           = local.database_tags
 }
 
 resource "azurerm_mssql_firewall_rule" "firewallruledatabase" {
   name             = var.firewallruledatabase
   server_id        = azurerm_mssql_server.sqlserver.id
   start_ip_address = var.start_ip_address
-  end_ip_address   = var.end_ip_address
+  end_ip_address   = length(var.end_ip_address) == 0 ? var.start_ip_address : var.end_ip_address
 }
 
-#####################################################
+#########################################################
 ################## Creating Key-Vault ###################
 
 resource "azurerm_key_vault" "key-vault" {
   provider                    = azurerm.vault
   name                        = var.key-vault
   location                    = azurerm_resource_group.db_rg.location
-  resource_group_name         = azurerm_resource_group.db_rg.name
+  resource_group_name         = var.db_rg != null ? var.db_rg : azurerm_resource_group.db_rg.name
   enabled_for_disk_encryption = var.enabled_for_disk_encryption
   tenant_id                   = data.azurerm_client_config.current.tenant_id
   soft_delete_retention_days  = 7
